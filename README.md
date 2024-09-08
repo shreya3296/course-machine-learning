@@ -71,6 +71,7 @@ The assignment is divided into several steps:
   - **Investigating Trends:** The dataset was used to investigate trends in income across various demographic factors such as gender, education, and age. For example, a strong correlation between income and education level was observed, with income increasing as education level increased.
   - **Gini Coefficient Calculation:** The Gini coefficient was calculated to quantify income inequality in the simulated dataset. The resulting coefficient was 0.473, indicating moderate income inequality, similar to the actual Gini coefficient of the United States.
   - **Critique of Simulated Data:** The assignment also required critiquing the simulated data, focusing on the implications of the simplifications and preprocessing steps used.
+![download](https://github.com/user-attachments/assets/54819a8f-61e1-4043-ad20-0ee72f6f2e85)
 
 - **Techniques Used:**
   - Exploratory Data Analysis (EDA) using `Pandas`, `Seaborn`, and `Matplotlib`
@@ -98,7 +99,7 @@ The assignment is divided into several steps:
   - **LASSO Regularization:** LASSO (L1 regularization) was applied to a polynomial model of degree 30 to shrink coefficients of insignificant features to zero. This helped identify the most important polynomial terms while avoiding overfitting. The best regularization parameter (alpha) was found using LassoCV, and bootstrapping was used to evaluate the consistency of significant coefficients.
   - **Model Comparison:** Various polynomial regression models were compared based on their training and test MSEs. The best model was selected based on its performance on the test set, balancing complexity and generalization.
 
-    ![Regression Curve](/Users/shreyachaturvedi/ds/portfolio-git/course-machine-learning/images/hw3.png)
+![hw3](https://github.com/user-attachments/assets/5fa258c0-2fde-4646-b6db-198ec5afb85a)
 
 - **Techniques Used:**
   - Polynomial Regression using `Scikit-learn`
@@ -171,8 +172,8 @@ The assignment is divided into several steps:
 - **Approach:**  
   The assignment is divided into several steps:
   - **Exploratory Data Analysis (EDA):** Visualizations were created to explore the relationship between the predictors and the admissions outcome.
+![hw5](https://github.com/user-attachments/assets/e425fbd4-05f5-48d5-8324-2d582fd4fa6c)
 
-   ![Relationship Visuals](course-machine-learning/images/hw5.png)
   - **Logistic Regression Models:** Several logistic regression models were built to predict the chances of admission based on different combinations of predictors. The models included interaction terms to account for relationships between the variables, such as the interaction between applying to Harvard and test scores.
   - **k-Nearest Neighbors (kNN):** A kNN classifier was trained to predict admission, and cross-validation was used to identify the best number of neighbors (k) for the model.
   - **LASSO Regression:** LASSO (L1 regularization) was applied to reduce the complexity of the logistic regression model by shrinking unimportant coefficients to zero, thus selecting only the most relevant features.
