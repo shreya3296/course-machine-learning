@@ -1,0 +1,2493 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "# Initialize Otter\n",
+    "import otter\n",
+    "grader = otter.Notebook(\"cs109a_hw3.ipynb\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "# <img style=\"float: left; padding-right: 10px; width: 45px\" src=\"https://raw.githubusercontent.com/Harvard-IACS/2018-CS109A/master/content/styles/iacs.png\"> CS109A Introduction to Data Science: \n",
+    "\n",
+    "## Homework 3: Polynomial and LASSO Regression\n",
+    "\n",
+    "**Harvard University**<br/>\n",
+    "**Fall 2023**<br/>\n",
+    "**Instructors**: Pavlos Protopapas and Kevin Rader\n",
+    "\n",
+    "<hr style=\"height:2.4pt\">"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style>\n",
+       "blockquote { background: #AEDE94; }\n",
+       "h1 {\n",
+       "    padding-top: 25px;\n",
+       "    padding-bottom: 25px;\n",
+       "    text-align: left;\n",
+       "    padding-left: 10px;\n",
+       "    background-color: #63ACBE;\n",
+       "    color: black;\n",
+       "}\n",
+       "h2 {\n",
+       "    padding-top: 10px;\n",
+       "    padding-bottom: 10px;\n",
+       "    text-align: left;\n",
+       "    padding-left: 5px;\n",
+       "    background-color: #EEEEEE;\n",
+       "    color: black;\n",
+       "}\n",
+       "\n",
+       "div.exercise {\n",
+       "\tbackground-color: #f8b4ab;\n",
+       "\tborder-color: #E9967A;\n",
+       "\tborder-left: 5px solid #601A4A;\n",
+       "\tpadding: 0.5em;\n",
+       "}\n",
+       "\n",
+       "div.exercise-r {\n",
+       "\tbackground-color: #ffd0d0;\n",
+       "\tborder-color: #E9967A;\n",
+       "\tborder-left: 5px solid #601A4A;\n",
+       "\tpadding: 0.5em;\n",
+       "}\n",
+       "\n",
+       "\n",
+       "span.sub-q {\n",
+       "\tfont-weight: bold;\n",
+       "}\n",
+       "div.theme {\n",
+       "\tbackground-color: #63ACBE;\n",
+       "\tborder-color: #E9967A;\n",
+       "\tborder-left: 5px solid #601A4A;\n",
+       "\tpadding: 0.5em;\n",
+       "\tfont-size: 18pt;\n",
+       "}\n",
+       "div.gc {\n",
+       "\tbackground-color: #AEDE94;\n",
+       "\tborder-color: #E9967A;\n",
+       "\tborder-left: 5px solid #601A4A;\n",
+       "\tpadding: 0.5em;\n",
+       "\tfont-size: 12pt;\n",
+       "}\n",
+       "p.q1 {\n",
+       "    padding-top: 5px;\n",
+       "    padding-bottom: 5px;\n",
+       "    text-align: left;\n",
+       "    padding-left: 5px;\n",
+       "    background-color: #EEEEEE;\n",
+       "    color: black;\n",
+       "}\n",
+       "header {\n",
+       "   padding-top: 35px;\n",
+       "    padding-bottom: 35px;\n",
+       "    text-align: left;\n",
+       "    padding-left: 10px;\n",
+       "    background-color: #DDDDDD;\n",
+       "    color: black;\n",
+       "}\n",
+       "span.emph {\n",
+       "\tcolor: #601A4A;\n",
+       "\tfont-weight: bold;\n",
+       "}\n",
+       "\n",
+       "</style>\n"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# RUN THIS CELL \n",
+    "import requests\n",
+    "from IPython.core.display import HTML\n",
+    "styles = requests.get(\n",
+    "    \"https://raw.githubusercontent.com/Harvard-IACS/2021-CS109A/master/\"\n",
+    "    \"themes/static/css/cs109.css\"\n",
+    ").text\n",
+    "HTML(styles)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Instructions\n",
+    "- To submit your assignment follow the instructions given in Canvas.\n",
+    "- Plots should be legible and interpretable without having to refer to the code that generated them, including labels for the $x$- and $y$-axes as well as a descriptive title and/or legend when appropriate.\n",
+    "- When asked to interpret a visualization, do not simply describe it (e.g., \"the curve has a steep slope up\"), but instead explain what you think the plot *means*.\n",
+    "- The use of 'hard-coded' values to try and pass tests rather than solving problems programmatically will not receive credit.\n",
+    "- The use of *extremely* inefficient or error-prone code (e.g., copy-pasting nearly identical commands rather than looping) may result in only partial credit.\n",
+    "- We have tried to include all the libraries you may need to do the assignment in the imports cell provided below. Please get course staff approval before importing any additional 3rd party libraries.\n",
+    "- Enable scrolling output on cells with very long output.\n",
+    "- Feel free to add additional code or markdown cells as needed.\n",
+    "- Ensure your code runs top to bottom without error and passes all tests by restarting the kernel and running all cells. This is how the notebook will be evaluated (note that this can take a few minutes). \n",
+    "- **The notebook you submit must be run in order with all output visible**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "3c67b69c-c35a-45ee-88ff-99c701edb0a0",
+    "colab_type": "text",
+    "id": "BlViDCbxVtbG"
+   },
+   "source": [
+    "### Import Libraries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "cell_id": "c81fe721-9f10-4eec-b9a3-3a2534d1c3a2",
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 71
+    },
+    "colab_type": "code",
+    "id": "aQbflkbDOxbz",
+    "outputId": "a93e76ad-1f12-45fa-ec35-7853e450a1ff"
+   },
+   "outputs": [],
+   "source": [
+    "from collections import Counter\n",
+    "import math\n",
+    "\n",
+    "import matplotlib as mpl\n",
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import seaborn as sns\n",
+    "from scipy import stats\n",
+    "from sklearn.linear_model import Lasso, LassoCV\n",
+    "from sklearn.linear_model import LinearRegression\n",
+    "from sklearn.metrics import mean_squared_error\n",
+    "from sklearn.model_selection import cross_validate\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from sklearn.preprocessing import PolynomialFeatures\n",
+    "from sklearn.utils import shuffle\n",
+    "\n",
+    "from warnings import simplefilter\n",
+    "simplefilter('ignore', category=FutureWarning)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "<a id=\"contents\"></a>\n",
+    "\n",
+    "## Notebook contents\n",
+    "\n",
+    "- [**Overview and data description**](#intro)\n",
+    "\n",
+    "\n",
+    "- [**Question 1: Data visualization [4 pts]**](#part1)\n",
+    "\n",
+    "- [**Your Homework 3 roadmap**](#roadmap)\n",
+    "\n",
+    "\n",
+    "- [**Question 2: Guesstimate the polynomial relationship [22 pts]**](#part2)\n",
+    "\n",
+    "- [**Question 3: Use a validation set to find the most promising polynomial relationship [12 pts]**](#part3)\n",
+    "\n",
+    "- [**Question 4: Finding the best model by k-fold cross validation [14 pts]**](#part4)\n",
+    "\n",
+    "- [**Question 5: Finding the most consistent model using k-fold cross validation with bootstraps [16 pts]**](#part5)\n",
+    "\n",
+    "- [**Question 6: Improving model consistency with LASSO regularization [26 pts]**](#part6)\n",
+    "\n",
+    "- [**Question 7: Analyze your best test MSEs for each section of the homework [6 pts]**](#part7)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "21e9f773-e015-44ec-88c8-7f24b9a8191f",
+    "colab_type": "text",
+    "id": "Uo0FiNThV923"
+   },
+   "source": [
+    "<a id=\"intro\"></a>\n",
+    "\n",
+    "## Overview and data description\n",
+    "\n",
+    "[Return to contents](#contents)\n",
+    "\n",
+    "### Predicting percentage change in bacteria populations given their spreading factor\n",
+    "\n",
+    "In this homework, we will explore polynomial regression for modeling a quantitative variable. Specifically, we will model the percent change in a bacteria population after 4 hours as a function of the bacteria's \"spreading factor\".\n",
+    "\n",
+    "**The data set for this problem has already been split for you.** You will find the train and test data sets in the files `data/bacteria_train.csv` and `data/bacteria_test.csv`, respectively.\n",
+    "\n",
+    "### Problem Description\n",
+    "\n",
+    "We will predict the percentage change in population, given the spreading factor. Thus, we will consider the `Spreading_factor` to be our predictor variable and `Perc_population` to be our response variable. Using mean squared error ($MSE$) as an evaluative criteria, we will explore several different approaches for finding the best fit and most robust polynomial regression for modeling this relationship."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "12fa439c-9984-44e4-a4f7-581a3e01d520",
+    "colab_type": "text",
+    "id": "Inn1d2Hv1pIK",
+    "tags": []
+   },
+   "source": [
+    "<a id=\"part1\"></a>\n",
+    "\n",
+    "## <div class='exercise'>Question 1: Data visualization [4 pts]</div> \n",
+    "    \n",
+    "[Return to contents](#contents)\n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q1.1</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "12fa439c-9984-44e4-a4f7-581a3e01d520",
+    "colab_type": "text",
+    "deletable": false,
+    "editable": false,
+    "id": "Inn1d2Hv1pIK",
+    "jp-MarkdownHeadingCollapsed": true,
+    "tags": []
+   },
+   "source": [
+    "Generate a *well-labeled* scatter plot of the data points in the `bacteria_train.csv` file with the spreading factor on the $x$-axis and the percentage change on the $y$-axis."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "7e002b99-e7b2-4c64-af95-d9c7f031f476",
+    "colab": {},
+    "colab_type": "code",
+    "id": "ENmKd_MY2B3C",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "f5c595cd-3123-49c7-9688-7727f2653b70",
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 279
+    },
+    "colab_type": "code",
+    "id": "omqujmrs4PRg",
+    "outputId": "d71d0b9a-e945-43b0-a80a-098b0eb27ae2",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q1.2</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "12fa439c-9984-44e4-a4f7-581a3e01d520",
+    "colab_type": "text",
+    "deletable": false,
+    "editable": false,
+    "id": "Inn1d2Hv1pIK"
+   },
+   "source": [
+    "Based on the graph above, is there any discernable relationship between the spreading factor and percentage change in population? If so, how would you describe this relationship?"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "58d06521-c4cf-4304-b68a-595205946e44",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<a id=\"roadmap\"></a>\n",
+    "\n",
+    "<hr style='height:2px'> \n",
+    "\n",
+    "## Your Homework 3 roadmap\n",
+    "\n",
+    "[Return to contents](#contents)\n",
+    "\n",
+    "**We will be following this roadmap throught the notebook**\n",
+    "\n",
+    "![](data/roadmap.png)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "tags": []
+   },
+   "source": [
+    "<a id=\"part2\"></a>\n",
+    "\n",
+    "## <div class='exercise'>Question 2: Guesstimate the polynomial relationship [22 pts]</div> \n",
+    "\n",
+    "[Return to contents](#contents)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q2.1</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Based on your inspection in question 1, guesstimate the degree of the polynomial you believe would best fit the training while still generalizing well. Store this degree in the variable `guessed_deg`. \n",
+    "\n",
+    "Next, use `PolynomialFeatures()` to generate a design matrices of the guesstimated degree for the train and test data. Store these in `x_poly_train` and `x_poly_test`. \n",
+    "\n",
+    "**Notes:**\n",
+    "- **You don't need to scale your data in this assignment** (you can inspect the data to see why this might not be necessary)\n",
+    "- **You should *not* include a bias in the design matrix you intend to pass to the linear regression's `fit` method.**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "cell_id": "444d68ce-de93-4717-bad3-16d7c26f11a7",
+    "colab": {},
+    "colab_type": "code",
+    "id": "6-FlLcQCVYEP",
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "2"
+      ]
+     },
+     "execution_count": 1,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "2"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<p><strong style='color: red;'><pre style='display: inline;'>q2.1</pre> results:</strong></p><p><strong><pre style='display: inline;'>q2.1 - 1</pre> result:</strong></p><pre>    ❌ Test case failed\n",
+       "    Trying:\n",
+       "        assert type(guessed_deg) == int, \"guessed_deg should be an integer\"\n",
+       "    Expecting nothing\n",
+       "    **********************************************************************\n",
+       "    Line 1, in q2.1 0\n",
+       "    Failed example:\n",
+       "        assert type(guessed_deg) == int, \"guessed_deg should be an integer\"\n",
+       "    Exception raised:\n",
+       "        Traceback (most recent call last):\n",
+       "          File \"/Users/shreyachaturvedi/micromamba/envs/cs109a/lib/python3.11/doctest.py\", line 1351, in __run\n",
+       "            exec(compile(example.source, filename, \"single\",\n",
+       "          File \"<doctest q2.1 0[0]>\", line 1, in <module>\n",
+       "            assert type(guessed_deg) == int, \"guessed_deg should be an integer\"\n",
+       "                        ^^^^^^^^^^^\n",
+       "        NameError: name 'guessed_deg' is not defined\n",
+       "    Trying:\n",
+       "        assert type(x_poly_train) == np.ndarray, \"x_poly_train should be a numpy array\"\n",
+       "    Expecting nothing\n",
+       "    **********************************************************************\n",
+       "    Line 2, in q2.1 0\n",
+       "    Failed example:\n",
+       "        assert type(x_poly_train) == np.ndarray, \"x_poly_train should be a numpy array\"\n",
+       "    Exception raised:\n",
+       "        Traceback (most recent call last):\n",
+       "          File \"/Users/shreyachaturvedi/micromamba/envs/cs109a/lib/python3.11/doctest.py\", line 1351, in __run\n",
+       "            exec(compile(example.source, filename, \"single\",\n",
+       "          File \"<doctest q2.1 0[1]>\", line 1, in <module>\n",
+       "            assert type(x_poly_train) == np.ndarray, \"x_poly_train should be a numpy array\"\n",
+       "                        ^^^^^^^^^^^^\n",
+       "        NameError: name 'x_poly_train' is not defined\n",
+       "    Trying:\n",
+       "        assert type(x_poly_test) == np.ndarray, \"x_poly_test should be a numpy array\"\n",
+       "    Expecting nothing\n",
+       "    **********************************************************************\n",
+       "    Line 3, in q2.1 0\n",
+       "    Failed example:\n",
+       "        assert type(x_poly_test) == np.ndarray, \"x_poly_test should be a numpy array\"\n",
+       "    Exception raised:\n",
+       "        Traceback (most recent call last):\n",
+       "          File \"/Users/shreyachaturvedi/micromamba/envs/cs109a/lib/python3.11/doctest.py\", line 1351, in __run\n",
+       "            exec(compile(example.source, filename, \"single\",\n",
+       "          File \"<doctest q2.1 0[2]>\", line 1, in <module>\n",
+       "            assert type(x_poly_test) == np.ndarray, \"x_poly_test should be a numpy array\"\n",
+       "                        ^^^^^^^^^^^\n",
+       "        NameError: name 'x_poly_test' is not defined\n",
+       "    Trying:\n",
+       "        assert x_poly_train.shape[1] == guessed_deg,\\\n",
+       "            \"Your train design matrix should have the same number of columns as guessed_deg\"\n",
+       "    Expecting nothing\n",
+       "    **********************************************************************\n",
+       "    Line 4, in q2.1 0\n",
+       "    Failed example:\n",
+       "        assert x_poly_train.shape[1] == guessed_deg,\\\n",
+       "            \"Your train design matrix should have the same number of columns as guessed_deg\"\n",
+       "    Exception raised:\n",
+       "        Traceback (most recent call last):\n",
+       "          File \"/Users/shreyachaturvedi/micromamba/envs/cs109a/lib/python3.11/doctest.py\", line 1351, in __run\n",
+       "            exec(compile(example.source, filename, \"single\",\n",
+       "          File \"<doctest q2.1 0[3]>\", line 1, in <module>\n",
+       "            assert x_poly_train.shape[1] == guessed_deg,\\\n",
+       "                   ^^^^^^^^^^^^\n",
+       "        NameError: name 'x_poly_train' is not defined\n",
+       "    Trying:\n",
+       "        assert x_poly_test.shape[1] == guessed_deg,\\\n",
+       "            \"Your test design matrix should have the same number of columns as guessed_deg\"\n",
+       "    Expecting nothing\n",
+       "    **********************************************************************\n",
+       "    Line 6, in q2.1 0\n",
+       "    Failed example:\n",
+       "        assert x_poly_test.shape[1] == guessed_deg,\\\n",
+       "            \"Your test design matrix should have the same number of columns as guessed_deg\"\n",
+       "    Exception raised:\n",
+       "        Traceback (most recent call last):\n",
+       "          File \"/Users/shreyachaturvedi/micromamba/envs/cs109a/lib/python3.11/doctest.py\", line 1351, in __run\n",
+       "            exec(compile(example.source, filename, \"single\",\n",
+       "          File \"<doctest q2.1 0[4]>\", line 1, in <module>\n",
+       "            assert x_poly_test.shape[1] == guessed_deg,\\\n",
+       "                   ^^^^^^^^^^^\n",
+       "        NameError: name 'x_poly_test' is not defined\n",
+       "</pre>"
+      ],
+      "text/plain": [
+       "q2.1 results:\n",
+       "    q2.1 - 1 result:\n",
+       "        ❌ Test case failed\n",
+       "        Trying:\n",
+       "            assert type(guessed_deg) == int, \"guessed_deg should be an integer\"\n",
+       "        Expecting nothing\n",
+       "        **********************************************************************\n",
+       "        Line 1, in q2.1 0\n",
+       "        Failed example:\n",
+       "            assert type(guessed_deg) == int, \"guessed_deg should be an integer\"\n",
+       "        Exception raised:\n",
+       "            Traceback (most recent call last):\n",
+       "              File \"/Users/shreyachaturvedi/micromamba/envs/cs109a/lib/python3.11/doctest.py\", line 1351, in __run\n",
+       "                exec(compile(example.source, filename, \"single\",\n",
+       "              File \"<doctest q2.1 0[0]>\", line 1, in <module>\n",
+       "                assert type(guessed_deg) == int, \"guessed_deg should be an integer\"\n",
+       "                            ^^^^^^^^^^^\n",
+       "            NameError: name 'guessed_deg' is not defined\n",
+       "        Trying:\n",
+       "            assert type(x_poly_train) == np.ndarray, \"x_poly_train should be a numpy array\"\n",
+       "        Expecting nothing\n",
+       "        **********************************************************************\n",
+       "        Line 2, in q2.1 0\n",
+       "        Failed example:\n",
+       "            assert type(x_poly_train) == np.ndarray, \"x_poly_train should be a numpy array\"\n",
+       "        Exception raised:\n",
+       "            Traceback (most recent call last):\n",
+       "              File \"/Users/shreyachaturvedi/micromamba/envs/cs109a/lib/python3.11/doctest.py\", line 1351, in __run\n",
+       "                exec(compile(example.source, filename, \"single\",\n",
+       "              File \"<doctest q2.1 0[1]>\", line 1, in <module>\n",
+       "                assert type(x_poly_train) == np.ndarray, \"x_poly_train should be a numpy array\"\n",
+       "                            ^^^^^^^^^^^^\n",
+       "            NameError: name 'x_poly_train' is not defined\n",
+       "        Trying:\n",
+       "            assert type(x_poly_test) == np.ndarray, \"x_poly_test should be a numpy array\"\n",
+       "        Expecting nothing\n",
+       "        **********************************************************************\n",
+       "        Line 3, in q2.1 0\n",
+       "        Failed example:\n",
+       "            assert type(x_poly_test) == np.ndarray, \"x_poly_test should be a numpy array\"\n",
+       "        Exception raised:\n",
+       "            Traceback (most recent call last):\n",
+       "              File \"/Users/shreyachaturvedi/micromamba/envs/cs109a/lib/python3.11/doctest.py\", line 1351, in __run\n",
+       "                exec(compile(example.source, filename, \"single\",\n",
+       "              File \"<doctest q2.1 0[2]>\", line 1, in <module>\n",
+       "                assert type(x_poly_test) == np.ndarray, \"x_poly_test should be a numpy array\"\n",
+       "                            ^^^^^^^^^^^\n",
+       "            NameError: name 'x_poly_test' is not defined\n",
+       "        Trying:\n",
+       "            assert x_poly_train.shape[1] == guessed_deg,\\\n",
+       "                \"Your train design matrix should have the same number of columns as guessed_deg\"\n",
+       "        Expecting nothing\n",
+       "        **********************************************************************\n",
+       "        Line 4, in q2.1 0\n",
+       "        Failed example:\n",
+       "            assert x_poly_train.shape[1] == guessed_deg,\\\n",
+       "                \"Your train design matrix should have the same number of columns as guessed_deg\"\n",
+       "        Exception raised:\n",
+       "            Traceback (most recent call last):\n",
+       "              File \"/Users/shreyachaturvedi/micromamba/envs/cs109a/lib/python3.11/doctest.py\", line 1351, in __run\n",
+       "                exec(compile(example.source, filename, \"single\",\n",
+       "              File \"<doctest q2.1 0[3]>\", line 1, in <module>\n",
+       "                assert x_poly_train.shape[1] == guessed_deg,\\\n",
+       "                       ^^^^^^^^^^^^\n",
+       "            NameError: name 'x_poly_train' is not defined\n",
+       "        Trying:\n",
+       "            assert x_poly_test.shape[1] == guessed_deg,\\\n",
+       "                \"Your test design matrix should have the same number of columns as guessed_deg\"\n",
+       "        Expecting nothing\n",
+       "        **********************************************************************\n",
+       "        Line 6, in q2.1 0\n",
+       "        Failed example:\n",
+       "            assert x_poly_test.shape[1] == guessed_deg,\\\n",
+       "                \"Your test design matrix should have the same number of columns as guessed_deg\"\n",
+       "        Exception raised:\n",
+       "            Traceback (most recent call last):\n",
+       "              File \"/Users/shreyachaturvedi/micromamba/envs/cs109a/lib/python3.11/doctest.py\", line 1351, in __run\n",
+       "                exec(compile(example.source, filename, \"single\",\n",
+       "              File \"<doctest q2.1 0[4]>\", line 1, in <module>\n",
+       "                assert x_poly_test.shape[1] == guessed_deg,\\\n",
+       "                       ^^^^^^^^^^^\n",
+       "            NameError: name 'x_poly_test' is not defined"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "grader.check(\"q2.1\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q2.2</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Fit a polynomial regression using scikit-learn's `LinearRegression()` on the training design matrix. \n",
+    "\n",
+    "To track and compare the performance of each of the models in this notebook, use a list of dictionaries called `results`.\n",
+    "\n",
+    "Each dictionary in this list will have the keys: 'model' (a string representing the question number where the model was fit), 'train_mse', and 'test_mse'.\n",
+    "\n",
+    "So, for this question, you will append a dictionary to `results` of the form:\n",
+    "```python\n",
+    "{'model': '2.2', 'train_mse': 2.6749 'test_mse': 2.734}\n",
+    "```\n",
+    "Note that your MSE scores will not be the same as those in the example dictionary.\n",
+    "\n",
+    "**Hint:** Because you will be calculating MSEs for models through this notebook, you may want to abstract this process into a function for re-use."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "0c26d26f-a37c-4ed5-b0c9-6364abe9afca",
+    "colab": {},
+    "colab_type": "code",
+    "id": "PEUA3tnZVYG_",
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Fit a linear regression model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "# Display your results thus far.\n",
+    "pd.DataFrame(results)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "grader.check(\"q2.2\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q2.3</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "- Create a plot showing both the train and test data, as well as your model's prediction curve.\n",
+    "- Display `results` as a DataFrame.\n",
+    "- Explain the rationale for your choice of degree (i.e. your \"guesstimation\") and comment on the fit of your model.\n",
+    "  "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q2.4</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Now we will compute confidence intervals for the coefficients generated by our model specification. For the same degree polynomial regression fit above in 2.2, compute and plot the 95% confidence interval of the beta (i.e. $\\beta$) values obtained in that regression model. Be certain to meet these primary requirements:\n",
+    "- Report the coefficient values of the model fit above in 2.2.\n",
+    "- Use bootstrapping to generate your 95% confidence intervals by refitting your model to each bootstrapped sample of your training data. You should use **100 bootstrapped samples**.\n",
+    "- For each bootstrap, store the coefficients of the model, and use those stored coefficients to compute the $2.5$ and $97.5$ confidence bounds.\n",
+    "- Plot the bootstrapped coefficients as a grid of histograms, one histogram for each $\\beta_i$, illustrating the distribution of bootstrapped coefficients for each $\\beta_i$. Each distribution should indicate the regions of 95% confidence. Use `plt.subplots(...)` to arrange your histograms as a grid of plots.\n",
+    "- Comment on your findings.\n",
+    "\n",
+    "**Note:** Our use of the term \"coefficients\" includes the intercept. So the intercept should also get a confidence interval plot.\n",
+    "\n",
+    "**Hints:** Wrapping your plotting code in a function may make the solution to the next question more concise."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "760e6473-0f70-4982-9426-4384f887865c",
+    "colab": {},
+    "colab_type": "code",
+    "id": "loY8FYSSVYPt",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "50a39167-eb1c-49de-86fa-a16f2e927218",
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 993
+    },
+    "colab_type": "code",
+    "id": "UtElE-aRVYSf",
+    "outputId": "64cb5557-5516-4ef2-c84b-66af7d570afb",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q2.5</b></div>"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Linear regression can be viewed probabilistically, with deviations from the regression line attributed to an error term, $ \\epsilon $, distributed as:\n",
+    "\n",
+    "$$ \\epsilon \\sim N(0, \\sigma^2) $$\n",
+    "\n",
+    "In this question, you'll estimate confidence intervals for the regression coefficients based on this probabilistic perspective. Follow these steps:\n",
+    "\n",
+    "1. Compute $ \\hat{\\sigma}_\\epsilon^2 $, an estimate for the variance of the error term.\n",
+    "2. Utilizing this estimated variance, derive the standard errors for your regression coefficients.\n",
+    "3. Construct 95% confidence intervals for the coefficients using their standard errors. For the z-value, use 1.96.\n",
+    "4. Visualize the 95% confidence intervals alongside those from the bootstrap method. The values of the interval bounds should be made explicit in the plot.\n",
+    "\n",
+    "**Hints:**\n",
+    "- Ensure your design matrix, $ X $, includes an intercept column to compute a confidence interval for $ \\beta_0 $.\n",
+    "- Bootstrap samples play no role in this calculation."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q2.6</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "Reflect on the differences between the two sets of confidence intervals. Demonstrate at least one diagnostic making use of the model and/or training data to explore the potential reasons for any observed discrepancies in the confidence intervals. Be sure to explain the relevance of your diagnostic(s) to this particular task and interpret the results."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<a id=\"part3\"></a>\n",
+    "\n",
+    "## <div class='exercise'>Question 3: Single validation set [12 pts]</div> \n",
+    "\n",
+    "In this section you'll find the best degree polynomial relationship using a single validation set.\n",
+    "\n",
+    "[Return to contents](#contents)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q3.1</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Split your original training data such that you separate out 20% into a single validation split. Use `random_state=1` and save the resulting splits as `x_train80`, `x_val`, `y_train80`, `y_val`. (This will prevent the overwriting of the original train data variables)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "552b9463-f979-4f09-8a72-8f4bd7126289",
+    "colab": {},
+    "colab_type": "code",
+    "id": "Hg85gaKsbZiZ",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "grader.check(\"q3.1\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q3.2</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "- Fit polynomial regression models for **degrees 1 to 30 (inclusive)** on the 80% training set (one model for each degree polynomial regression).\n",
+    "- Store the train and validation MSE values for each model in lists called `train_mses` and `val_mses`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "c850d414-3a0a-4cf6-b1c3-38ce7bf1977e",
+    "colab": {},
+    "colab_type": "code",
+    "id": "ZyToQtJXbZfu",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "grader.check(\"q3.2\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q3.3</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "- Generate a single plot illustrating the train and validation $MSE$ values for each fitted degree polynomial regression model.\n",
+    "- Identify and report the degree for which the validation error is lowest.\n",
+    "\n",
+    "**Note:** Plotting the MSE on a log scale may be helpful."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q3.4</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Now, with the best degree selected, train the polynomial regression on the **complete training set** (including the observations that you had previously removed to make the validation set). \n",
+    "\n",
+    "Append a new dictionary to your `results` list for this model."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "# Display your results thus far.\n",
+    "pd.DataFrame(results)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "grader.check(\"q3.4\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q3.5</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Generate a plot of the data and your regression curve (similar to [Question 2.3](#part2)). Comment on how your model fits the data and compare it to the fit of your \"guesstimated\" model from [Question 2](#part2solutions)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "tags": []
+   },
+   "source": [
+    "<a id=\"part4\"></a>\n",
+    "\n",
+    "## <div class='exercise'>Question 4: Finding the best model by k-fold cross validation [14 pts]</div> \n",
+    "\n",
+    "[Return to contents](#contents)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q4.1</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "In this part we find the best degree polynomial regression by running the model on a range of degree values and using k-fold cross validation. Note that `cross_validation` should be passed *all* training examples (*not* the 80% split from the previous question).\n",
+    "\n",
+    "- Use scikit-learn's `cross_validate(...)` to perform cross validation with $k=10$ for each polynomial regression from **degree 1 to 30 (inclusive)**.\n",
+    "- For each degree:\n",
+    "    - store the mean train MSE across all $k$ folds in the list `train_mses_mean`\n",
+    "    - store the mean validation MSE across all $k$ folds in the list `val_mses_mean`\n",
+    "    - store the standard deviation  of the validation MSE across all $k$ folds in the list `val_mses_std`\n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "da3566a6-fb5a-41c6-8a95-a689d5bd9e68",
+    "colab": {},
+    "colab_type": "code",
+    "id": "garnX5JEsVXT",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "grader.check(\"q4.1\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q4.2</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "- Generate a single plot showing the mean train and validation $MSE$ values (see note below) for each degree polynomial regression, including the +/- 1 standard deviation bounds for the validation $MSE$ values.\n",
+    "- Comment on trends and findings illustrated by your plot.\n",
+    "- Print the degree of the best model, identified based on the lowest mean validation $MSE$, along with the corresponding mean train and validation $MSE$ values.\n",
+    "\n",
+    "**NOTE:** When we refer to train and validation $MSE$ values here in Question 4.2 and in future problems where we are performing cross validation, we are referring specifically to the cross-validation generated train and validation $MSE$ values. Just please remember, when accessing your validation $MSE$ values while performing cross validation with scikit-learn's `cross_validate(...)`, scikit-learn rather confusingly refers to its validation scores as `test_score` in the dictionary that it returns, even though those values are actually validation scores. Please see the `cross_validate(...)` [documentation](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html) for more info on this function."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q4.3</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Fit the best model based on the entire training data and report the $MSE$.\n",
+    "\n",
+    "\n",
+    "- For the best degree polynomial regression identified in Question 4.2 above, train on the complete training data and predict on the test data.\n",
+    "- Append a new dictionary for this model to the `results` list. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "9955c745-fa73-4fee-b2eb-e65815594c08",
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 34
+    },
+    "colab_type": "code",
+    "id": "t-4YaKjuse4r",
+    "outputId": "4e5ae69a-5724-4e4f-d8e4-3f6600820b05",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "grader.check(\"q4.3\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q4.4</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "- Generate a plot of the data and your regression curve (similar to [Question 2.3](#part2)).\n",
+    "- Display the coefficients of your model.\n",
+    "- Display `results` as a DataFrame (there should now be 3 entries).\n",
+    "- Comment on how your model fits the data and how your model compares relative to the prior best-fit model you generated using just a single validation set in [Question 3](#part3solutions)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<a id=\"part5\"></a>\n",
+    "\n",
+    "## <div class='exercise'>Question 5: Finding the most consistent model using k-fold cross validation with bootstraps [16 pts]</div> \n",
+    "\n",
+    "[Return to contents](#contents)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q5.1</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "In the previous part, we used $k$-fold cross validation to find the best model. But how confident are you of your estimated best degree? We have already used bootstraps in [Question 2.4](#part2) to estimate the confidence intervals of our $\\beta_i$ values. In this segment, we will use bootstrapping to test the robustness of our estimation.\n",
+    "\n",
+    "- Similar to Question 2.4, **use 100 bootstraps** of your data.\n",
+    "- For each bootstrap:\n",
+    "  - Use scikit-learn's `cross_validate(...)` to perform cross validation with $k=10$ *for each polynomial regression* of **degrees 1 to 30 (inclusive)**.\n",
+    "  - Select the best degree polynomial based on the lowest mean cross-validation MSE and store this degree in a list called `best_degrees`.\n",
+    "- After completing your bootstraps, `best_degrees` should have 100 elements, one degree for each completed bootstrap.\n",
+    "\n",
+    "**NOTE:** Once complete, your code for this problem will likely take several minutes to execute. This is to be expected."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "f64508d4-de67-4e02-979c-57b6cc3da85c",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "grader.check(\"q5.1\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q5.2</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Generate a well-labeled bar plot, with the polynomial degree on the $x$-axis and the number of times that degree was deemed best on the $y$-axis, using the `best_degrees` saved during your bootstraps.\n",
+    "\n",
+    "**Hint:** You may want to make use of `Counter` which has been imported for your from the `collections` module of the standard Python library."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "7925de61-e041-437e-ba6b-b1c3e1b2fb0c",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q5.3</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "What are your observations from the plot above? \n",
+    "\n",
+    "- Why do you see so much variation in the \"best degree\" over the bootstraps?\n",
+    "- Which degree polynomial regression will you choose as your overall best degree based on your bootstrapped results, and why? "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q5.4</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Now, with the overall best degree identified with your bootstrapping results above, train the polynomial regression model on the **complete training set**. Append a new dictionary for this model to your `results` list. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "0cdef907-9d0f-4057-a70b-71022017e321",
+    "colab": {},
+    "colab_type": "code",
+    "id": "JNWmRvkAsey3",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "grader.check(\"q5.4\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q5.5</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "5c60cdd3-9885-4ac2-8144-635a481460f4",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "- Generate a plot of the data and your regression curve.\n",
+    "- Display `results` as a DataFrame.\n",
+    "- Comment on how your model fits the data and compare it to the fit of your cross-validated model from [Question 4](#part4solutions)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "8a32aef5-65a6-426d-a7ca-1f6fd63b3b16",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<a id=\"part6\"></a>\n",
+    "\n",
+    "## <div class='exercise'>Question 6: Improving model consistency with LASSO regularization [26 pts]</div> \n",
+    "\n",
+    "[Return to contents](#contents)\n",
+    "\n",
+    "In the previous sections, we compared many polynomial models to find the best degree. For each model of degree $n$, we considered all polynomial coefficients *up to and including* **degree $n$** using `PolynomialFeatures(...)`. In this section we will consider polynomial features of $n=30$, and a **best model** that could be chosen from any possible combination of our 30 degrees.\n",
+    "\n",
+    "For instance, we could choose a best model with an arbitrary set of polynomial degrees up degree 30, such as $x^i \\in [x^1, x^5, x^{19}, x^{24}]$, rather than the standard approach of using *all* consecutive degrees up to our maximum degree $n=30$ as in $x^i \\in [x^1, ... , x^{30}]$.\n",
+    "\n",
+    "However, the total number of such possible models for $n=30$ is $2^{30}\\approx10^9$, and searching through all of them would be laborious and computationally inefficient. Instead, we can use $LASSO$ (i.e. $L1$) regularization, which \"switches off\" highly unstable degree coefficients by shrinking them to zero (or very close to zero), thus giving us an efficient solution to this particular combinatorial challenge."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q6.1</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "8a32aef5-65a6-426d-a7ca-1f6fd63b3b16",
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "**Find the best hyper-parameter alpha, $\\alpha$**\n",
+    "\n",
+    "Use the `LassoCV` estimator to find the best regularization parameter from $\\alpha \\in [10^{-5}, 10^{-4}, 10^{-3}, 10^{-2}, 10^{-1}]$\n",
+    "- Store the mean cross-validation MSEs across each fold in `lassoCV_val_mses_mean`\n",
+    "- Save the best $\\alpha$ based on the mean cross-validation MSE in `best_alpha`\n",
+    "\n",
+    "You should read the documentation for [LassoCV](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LassoCV.html). Some important information about this estimator:\n",
+    "- After calling `fit`, the model is now the one fit on the entire training data using the best alpha based on the mean CV MSE.\n",
+    "- the `mse_path_` attribute contains the validation scores on each fold for each candidate alpha.\n",
+    "- the `alpha_` attribute contains the best regularization parameter found through cross-validation\n",
+    "\n",
+    "**Tips:** You should try adjusting `LassoCV`'s `max_iter` argument to prevent convergence warnings. If you are unable to prevent them with a large number of iterations (~100,000) then you can silence them with:\n",
+    "```{python}\n",
+    "from warnings import simplefilter\n",
+    "from sklearn.exceptions import ConvergenceWarning\n",
+    "simplefilter(\"ignore\", category=ConvergenceWarning)\n",
+    "```\n",
+    "Do not worry about normalizing your $x$ values for any parts of Question 6. It will not meaningfully affect our final results here."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "4f9d6f96-a6b7-4951-a98a-f29e0351a113",
+    "scrolled": true,
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "grader.check(\"q6.1\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q6.2</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "8a32aef5-65a6-426d-a7ca-1f6fd63b3b16",
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "Generate two plots:\n",
+    "- One showing the mean validation $MSE$ values for each regularization parameter $\\alpha$, identifying the best $\\alpha$.\n",
+    "- Another showing the values of each coefficient in the LASSO model using the best $\\alpha$. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "..."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q6.3</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "8a32aef5-65a6-426d-a7ca-1f6fd63b3b16",
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "**Find the most significant degrees**\n",
+    "\n",
+    "**NOTE: The code for this question has been provided. It can take several minutes to run. Just be sure to answer the interpretation part of the question.**\n",
+    "\n",
+    "From the previous section, you will now have the `best_alpha` hyperparameter. Now, we will use this best $\\alpha$ value to find the \"most significant\" set of polynomial degrees by using bootstraps.\n",
+    "\n",
+    "What we mean by this is, for each bootstrap of the data, you will get some set of degrees that are **significant**, as will be indicated by the value of their coefficients. Typically, while using $LASSO$ regularization, we would consider $\\mid\\beta_i\\mid \\gt 0$ as an indication of a particular coefficient's significance. However, for this particular exercise, we are going to use $\\mid\\beta_i\\mid \\gt 0.1$ as our criteria for significance (we have found this $0.1$ threshold to work well when designing this particular problem).\n",
+    "\n",
+    "Based on this criteria, you will identify which degree coefficients are significant over many bootstrapped iterations with $n=30$ polynomial features and your chosen best $\\alpha$ from Question 6.1.\n",
+    "\n",
+    "- Use polynomial features with **degree 30**.\n",
+    "- Use a dictionary called `significant_degrees` to store a cumulative count for each degree identified as significant during your bootstraps.\n",
+    "- Run at least 100 bootstraps of your data.\n",
+    "- For each bootstrap:\n",
+    "  - Train a `Lasso(...)` model with the `best_alpha` identified in Question 6.1.\n",
+    "  - Identify the significant polynomial degree coefficients using $\\mid\\beta_i\\mid \\gt 0.1 $ as our threshold for significance.\n",
+    "  - For each significant coefficient, update the count of that degree in your `significant_degrees` dictionary.\n",
+    "- Generate a bar plot showing the count for each degree, showing how many times it was identified as significant over your bootstraps.\n",
+    "- Based on this plot, there should likely be a clear maximum degree, above which, few if any iterations have been identified as significant. Interpret your bar plot, choose a maximum degree polynomial based upon it, and explain your rationale for choosing that degree."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "1e847ea0-95b4-47fa-8c71-09636de2c913",
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Set bootstrapping parameters\n",
+    "numboot = 100\n",
+    "max_degree = 30\n",
+    "\n",
+    "significant_degrees = {}\n",
+    "\n",
+    "# Perform bootstraps\n",
+    "df_train = pd.read_csv('data/bacteria_train.csv')\n",
+    "for i in range(numboot):\n",
+    "    df_boot = df_train.sample(frac=1, replace=True)\n",
+    "    x_train_boot = df_boot[[\"Spreading_factor\"]]\n",
+    "    x_poly_train_boot = PolynomialFeatures(\n",
+    "        max_degree, include_bias=include_bias\n",
+    "    ).fit_transform(x_train_boot)\n",
+    "    y_train_boot = df_boot.Perc_population\n",
+    "\n",
+    "    lasso = Lasso(\n",
+    "        fit_intercept=True,\n",
+    "        max_iter=5_000,\n",
+    "        alpha=best_alpha,\n",
+    "    )\n",
+    "    lasso.fit(x_poly_train_boot, y_train_boot)\n",
+    "    \n",
+    "    if fit_intercept==True:\n",
+    "        coefficients = [lasso.intercept_, *lasso.coef_]\n",
+    "    else:\n",
+    "        coefficients = lasso.coef_\n",
+    "\n",
+    "    for i in np.where(np.abs(coefficients)>0.1)[0]:\n",
+    "        if i not in significant_degrees.keys():\n",
+    "            significant_degrees[i]=1\n",
+    "        else:\n",
+    "            significant_degrees[i]+=1\n",
+    "\n",
+    "fig, ax = plt.subplots(figsize=(10,5))\n",
+    "\n",
+    "lists = sorted(significant_degrees.items())\n",
+    "\n",
+    "x, y = zip(*lists)\n",
+    "\n",
+    "ax.bar(x, y, alpha=0.7)\n",
+    "ax.set_xlabel(\"Degree\", fontsize=12)\n",
+    "ax.set_ylabel(\"Frequency (counts)\", fontsize=12)\n",
+    "ax.set_xticks(range(max_degree+1))\n",
+    "ax.set_title(\n",
+    "    \"Number of times each degree coefficient was identified as significant at\\n\"\n",
+    "    f\"$\\mid\\\\beta_i\\mid > 0.1$ over {numboot} bootstrapped $LASSO$ models \"\n",
+    "    f\"with $\\\\alpha={best_alpha}$\",\n",
+    "    fontsize=14,\n",
+    ")\n",
+    "plt.grid(\":\", alpha=0.4)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q6.4</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "8a32aef5-65a6-426d-a7ca-1f6fd63b3b16",
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "From our Question 6.3 results, we can see that only some degrees are consistently significant over many bootstraps.\n",
+    "\n",
+    "- Use polynomial features based on the maximum degree you identified using your results from Question 6.3 (for the sake of simplicity, use all degrees up to that maximum degree as is typically done in polynomial regression).\n",
+    "- Train your **LASSO** regularized model using your `best_alpha` hyper-parameter on the entire training set.\n",
+    "- Append a new dictionary for this model to your `results` list."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "outputs": [],
+   "source": [
+    "grader.check(\"q6.4\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q6.5</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "8a32aef5-65a6-426d-a7ca-1f6fd63b3b16",
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "- Generate a plot of the data and your regression curve.\n",
+    "- Report the polynomial degrees and corresponding coefficients for this fully trained model that have an absolute value greater than 0.1 (i.e. $\\mid\\beta_i\\mid \\gt 0.1 $)\n",
+    "- Display `results` as a DataFrame."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q6.6</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "8a32aef5-65a6-426d-a7ca-1f6fd63b3b16",
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "**What are your observations?**\n",
+    "\n",
+    "- Compare your `best_degree` from [Question 5](#part5solutions) with your chosen degree in 6.4 above and comment on the difference.\n",
+    "- Compare your test $MSE$ in this question with the result from question 5. Which one is smaller, and by how much?\n",
+    "- Which degree coefficients in your best fit model from 6.4 are significant? If not all coefficients are significant, why?\n",
+    "- Would you expect your current model from 6.4 to be more \"reliable\" or robust than the models in Question 5 and prior? On what basis would you make a claim of its robustness?\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "fe903f84-5847-4e97-95c5-4424e57a375c",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<a id=\"part7\"></a>\n",
+    "\n",
+    "## <div class='exercise'>Question 7: Analyze your best test MSEs for each sub section of the homework [6 pts]</div> \n",
+    "\n",
+    "[Return to contents](#contents)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q7.1</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "fe903f84-5847-4e97-95c5-4424e57a375c",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Using the `results` list, generate a bar plot illustrating the test $MSE$ values for each of the models. Display `results` as a Dataframe as well."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "cell_id": "6a95aee4-794c-4c64-814f-2c6409017f10",
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<!-- BEGIN QUESTION -->\n",
+    "\n",
+    "<div class='exercise'><b>Q7.2</b></div>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "cell_id": "fe903f84-5847-4e97-95c5-4424e57a375c",
+    "deletable": false,
+    "editable": false,
+    "tags": []
+   },
+   "source": [
+    "Which model do you think is best, and why? What are some of that model's drawbacks compared to the other models? "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "_Type your answer here, replacing this text._"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "deletable": false,
+    "editable": false
+   },
+   "source": [
+    "<!-- END QUESTION -->\n",
+    "\n",
+    "**This concludes HW3. Thank you!**\n",
+    "\n",
+    "[Return to contents](#contents)"
+   ]
+  }
+ ],
+ "metadata": {
+  "colab": {
+   "collapsed_sections": [],
+   "name": "Homework2.ipynb",
+   "provenance": []
+  },
+  "deepnote_execution_queue": [
+   {
+    "cellId": "7925de61-e041-437e-ba6b-b1c3e1b2fb0c",
+    "msgId": "81bcbf6f-fa59-42e6-9480-bc996bae8f99",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "32ac05dc-6db8-4c64-8028-4a6e4c16ec1c",
+    "msgId": "17b61e3a-31e9-45e0-b1c8-cba828b9a48d",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "9e4ea6c6-2cb0-4aa1-b5bf-67be3a47ac87",
+    "msgId": "66b23ef4-2198-4543-a34e-3b998d83f1c7",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "0cdef907-9d0f-4057-a70b-71022017e321",
+    "msgId": "125b9c17-7ffa-4214-9ca2-27e9e34df7c7",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "2eefd92c-1d9f-49fe-a7f7-d7f0f4f59e95",
+    "msgId": "81a1b165-ee3a-4ab0-afff-99f4dfa74eef",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "40b93f58-240f-49bc-ab9c-a919d74b8e61",
+    "msgId": "4b00a64e-a71b-4cf9-a228-cbabdbee0414",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "2f3d3efa-8220-44b2-afbf-9600c2fea073",
+    "msgId": "5bdcc501-f577-4908-9e85-aa52b44f652f",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "2f3d3efa-8220-44b2-afbf-9600c2fea073",
+    "msgId": "96fa923e-991c-409f-954b-1a9d036a7f0a",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "cc0c9423-6587-41fb-88c4-5e7db61d7791",
+    "msgId": "c4775dd8-e4e3-4505-865a-d2b54022e97c",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "4f9d6f96-a6b7-4951-a98a-f29e0351a113",
+    "msgId": "2721b704-5efa-4783-a128-ea0b813e202f",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "4f9d6f96-a6b7-4951-a98a-f29e0351a113",
+    "msgId": "14cd3ada-ede8-4693-b8ce-b1254e5357cb",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "1e847ea0-95b4-47fa-8c71-09636de2c913",
+    "msgId": "a53842aa-e7d2-4787-a474-04717a13bf12",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "4b9d11b1-bc81-4937-8924-eda535bbe287",
+    "msgId": "f9fa1ff3-ed3e-4876-8bb3-239ee4ec0279",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "8e836c0a-f87f-43f5-9448-838d0028b904",
+    "msgId": "f7641d44-aaf7-4676-bbd4-439a47d4db1f",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "c72943b7-5e58-4fe3-9225-fa0beeff3654",
+    "msgId": "1878748e-321b-484f-bee1-344ec8caf68e",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "c4bd7d98-380a-4853-8114-51d41f0cfd95",
+    "msgId": "af49c97c-7c7c-4b0c-9543-5c38d238fffb",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   },
+   {
+    "cellId": "c4bd7d98-380a-4853-8114-51d41f0cfd95",
+    "msgId": "691b283d-e47a-4686-9e73-4f457365a32a",
+    "sessionId": "e7116124-0a70-4245-961a-e0041ff25d29"
+   }
+  ],
+  "deepnote_notebook_id": "80dec77d-caa5-42a3-a211-a1492a1ab3e6",
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.5"
+  },
+  "otter": {
+   "OK_FORMAT": true,
+   "tests": {
+    "q2.1": {
+     "name": "q2.1",
+     "points": 2,
+     "suites": [
+      {
+       "cases": [
+        {
+         "code": ">>> assert type(guessed_deg) == int, \"guessed_deg should be an integer\"\n>>> assert type(x_poly_train) == np.ndarray, \"x_poly_train should be a numpy array\"\n>>> assert type(x_poly_test) == np.ndarray, \"x_poly_test should be a numpy array\"\n>>> assert x_poly_train.shape[1] == guessed_deg,\\\n...     \"Your train design matrix should have the same number of columns as guessed_deg\"\n>>> assert x_poly_test.shape[1] == guessed_deg,\\\n...     \"Your test design matrix should have the same number of columns as guessed_deg\"\n",
+         "hidden": false,
+         "locked": false
+        }
+       ],
+       "scored": true,
+       "setup": "",
+       "teardown": "",
+       "type": "doctest"
+      }
+     ]
+    },
+    "q2.2": {
+     "name": "q2.2",
+     "points": 2,
+     "suites": [
+      {
+       "cases": [
+        {
+         "code": ">>> assert type(results) == list, \"results should be a list of dictionaries\"\n>>> assert all([type(x) == dict for x in results]), \"results should be a list of dictionaries\"\n>>> assert all([k in ['model', 'train_mse', 'test_mse'] for k in results[0].keys()]),\\\n...             \"The dictionary in your results list should have the keys: 'model', 'train_mse', 'test_mse'.\"\n>>> assert isinstance(results[0]['train_mse'], float),  \"'train_mse' should be a float\"\n>>> assert isinstance(results[0]['test_mse'], float),  \"'test_mse' should be a float\"\n>>> assert results[0]['model'] == '2.2',  \"'The model name in your first result dictionary should be '2.2' (a string)\"\n",
+         "hidden": false,
+         "locked": false
+        }
+       ],
+       "scored": true,
+       "setup": "",
+       "teardown": "",
+       "type": "doctest"
+      }
+     ]
+    },
+    "q3.1": {
+     "name": "q3.1",
+     "points": 1,
+     "suites": [
+      {
+       "cases": [
+        {
+         "code": ">>> assert x_train80.shape == (338,1),\\\n...     \"Your new x_train80 should be 80% the size of the original x_train and should be 2-dimensional.\"+\\\n...     \" (reshape might help)\"\n>>> assert y_train80.size == 338, \"Your new y_train80 should be 80% the size of the original y_train.\"\n>>> assert x_val.shape == (85,1), \"x_val should be 20% the size of the original x_train and should be 2-dimensional.\"+\\\n...     \" (reshape might help)\"\n>>> assert y_val.size == 85, \"Your new y_val should be 20% the size of the original training set.\"\n",
+         "hidden": false,
+         "locked": false
+        }
+       ],
+       "scored": true,
+       "setup": "",
+       "teardown": "",
+       "type": "doctest"
+      }
+     ]
+    },
+    "q3.2": {
+     "name": "q3.2",
+     "points": 2,
+     "suites": [
+      {
+       "cases": [
+        {
+         "code": ">>> assert (type(train_mses) == list) and len(train_mses) == 30, \"`train_mses` should be a list with 30 elements\"\n>>> assert (type(val_mses) == list) and len(val_mses) == 30, \"`val_mses` should be a list with 30 elements\"\n>>> assert all([isinstance(x, float) for x in train_mses]), \"All train MSE values should be floats.\"\n>>> assert all([isinstance(x, float) for x in val_mses]), \"All validation MSE values should be floats.\"\n",
+         "hidden": false,
+         "locked": false
+        }
+       ],
+       "scored": true,
+       "setup": "",
+       "teardown": "",
+       "type": "doctest"
+      }
+     ]
+    },
+    "q3.4": {
+     "name": "q3.4",
+     "points": 3,
+     "suites": [
+      {
+       "cases": [
+        {
+         "code": ">>> assert all([k in ['model', 'train_mse', 'test_mse'] for k in results[1].keys()]),\\\n...             \"The 2nd dictionary in your results list should have the keys: 'model', 'train_mse', 'test_mse'.\"\n>>> assert isinstance(results[1]['train_mse'], float),  \"'train_mse' should be a float\"\n>>> assert isinstance(results[1]['test_mse'], float),  \"'test_mse' should be a float\"\n>>> assert results[1]['model'] == '3.4',  \"'The model name in your 2nd result dictionary should be '3.4' (a string)\"\n",
+         "hidden": false,
+         "locked": false
+        }
+       ],
+       "scored": true,
+       "setup": "",
+       "teardown": "",
+       "type": "doctest"
+      }
+     ]
+    },
+    "q4.1": {
+     "name": "q4.1",
+     "points": 4,
+     "suites": [
+      {
+       "cases": [
+        {
+         "code": ">>> assert (type(train_mses_mean) == list) and (len(train_mses_mean) == 30),\\\n...     \"train_mses_mean should be a list with 30 elements (one for each degree fit)\"\n>>> assert all([isinstance(x, float) for x in train_mses_mean]), \"All elements of train_mses_mean should be floats.\"\n>>> assert (type(val_mses_mean) == list) and len(val_mses_mean) == 30,\\\n...     \"val_mses_mean should be a list with 30 elements (one for each degree fit)\"\n>>> assert all([isinstance(x, float) for x in val_mses_mean]), \"All elements of val_mses_mean should be floats.\"\n>>> assert (type(val_mses_std) == list) and len(val_mses_std) == 30,\\\n...     \"val_mses_std should be a list with 30 elements (one for each degree fit)\"\n>>> assert all([isinstance(x, float) for x in val_mses_std]), \"All elements of val_mses_std should be floats.\"\n",
+         "hidden": false,
+         "locked": false
+        }
+       ],
+       "scored": true,
+       "setup": "",
+       "teardown": "",
+       "type": "doctest"
+      }
+     ]
+    },
+    "q4.3": {
+     "name": "q4.3",
+     "points": 4,
+     "suites": [
+      {
+       "cases": [
+        {
+         "code": ">>> assert all([k in ['model', 'train_mse', 'test_mse'] for k in results[2].keys()]),\\\n...             \"The 3rd dictionary in your results list should have the keys: 'model', 'train_mse', 'test_mse'.\"\n>>> assert isinstance(results[2]['train_mse'], float),  \"'train_mse' should be a float\"\n>>> assert isinstance(results[2]['test_mse'], float),  \"'test_mse' should be a float\"\n>>> assert results[2]['model'] == '4.3',  \"'The model name in your 3rd result dictionary should be '4.3' (a string)\"\n",
+         "hidden": false,
+         "locked": false
+        }
+       ],
+       "scored": true,
+       "setup": "",
+       "teardown": "",
+       "type": "doctest"
+      }
+     ]
+    },
+    "q5.1": {
+     "name": "q5.1",
+     "points": 4,
+     "suites": [
+      {
+       "cases": [
+        {
+         "code": ">>> assert (type(best_degrees) == list) and (len(best_degrees) == 100),\\\n...     \"best_degrees should be a list with 100 elements (one for each bootstrap).\"\n>>> assert all([isinstance(x, int) for x in best_degrees]),\\\n...     \"All elements of best_degrees should be integers.\"\n",
+         "hidden": false,
+         "locked": false
+        }
+       ],
+       "scored": true,
+       "setup": "",
+       "teardown": "",
+       "type": "doctest"
+      }
+     ]
+    },
+    "q5.4": {
+     "name": "q5.4",
+     "points": 3,
+     "suites": [
+      {
+       "cases": [
+        {
+         "code": ">>> assert all([k in ['model', 'train_mse', 'test_mse'] for k in results[3].keys()]),\\\n...             \"The 4th dictionary in your results list should have the keys: 'model', 'train_mse', 'test_mse'.\"\n>>> assert isinstance(results[3]['train_mse'], float),  \"'train_mse' should be a float\"\n>>> assert isinstance(results[3]['test_mse'], float),  \"'test_mse' should be a float\"\n>>> assert results[3]['model'] == '5.4',  \"'The model name in your 4th result dictionary should be '5.4' (a string)\"\n",
+         "hidden": false,
+         "locked": false
+        }
+       ],
+       "scored": true,
+       "setup": "",
+       "teardown": "",
+       "type": "doctest"
+      }
+     ]
+    },
+    "q6.1": {
+     "name": "q6.1",
+     "points": 5,
+     "suites": [
+      {
+       "cases": [
+        {
+         "code": ">>> assert len(lassoCV_val_mses_mean) == 5, \"You should have 5 mean val MSEs (one for each candidate alpha\" \n>>> assert isinstance(best_alpha, float), \"best_alpha should be a float\"\n",
+         "hidden": false,
+         "locked": false
+        }
+       ],
+       "scored": true,
+       "setup": "",
+       "teardown": "",
+       "type": "doctest"
+      }
+     ]
+    },
+    "q6.4": {
+     "name": "q6.4",
+     "points": 4,
+     "suites": [
+      {
+       "cases": [
+        {
+         "code": ">>> assert all([k in ['model', 'train_mse', 'test_mse'] for k in results[4].keys()]),\\\n...             \"The 5th dictionary in your results list should have the keys: 'model', 'train_mse', 'test_mse'.\"\n>>> assert isinstance(results[4]['train_mse'], float),  \"'train_mse' should be a float\"\n>>> assert isinstance(results[4]['test_mse'], float),  \"'test_mse' should be a float\"\n>>> assert results[4]['model'] == '6.4',  \"'The model name in your 5th result dictionary should be '6.4' (a string)\"\n",
+         "hidden": false,
+         "locked": false
+        }
+       ],
+       "scored": true,
+       "setup": "",
+       "teardown": "",
+       "type": "doctest"
+      }
+     ]
+    }
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

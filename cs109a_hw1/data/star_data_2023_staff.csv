@@ -1,0 +1,101 @@
+name,primary_role,roles,gender,year_born,first_credit,year_first_credit,num_credits
+Emily Rudd,actress,['actress'],female,1993,Boy & Bear: Three Headed Woman,2013,26
+Mary Elizabeth Winstead,actress,"['actress', 'producer', 'soundtrack']",female,1984,Touched by an Angel,1997,59
+Morgan Davies,actor,"['actor', 'second unit director or assistant director']",male,2001,Green Fire Envy,2008,19
+Mackenyu,actor,"['actor', 'soundtrack']",male,1996,Astro kyûdan,2005,46
+Iñaki Godoy,actor,['actor'],male,2003,Blue Demon,2016,11
+Danny Masterson,actor,"['actor', 'producer', 'soundtrack']",male,1976,Jake and the Fatman,1988,68
+Bijou Phillips,actress,"['actress', 'costume and wardrobe department', 'soundtrack']",female,1980,Sublime: Wrong Way,1997,38
+Stephanie Nur,actress,['actress'],female,1988,Tanzcafe Jenseits,2009,13
+Jeff Ward,actor,"['actor', 'writer', 'producer']",male,1986,Law & Order: Criminal Intent,2005,31
+Natasha Liu Bordizzo,actress,['actress'],female,1994,"Crouching Tiger, Hidden Dragon: Sword of Destiny",2016,16
+Ivanna Sakhno,actress,"['actress', 'producer']",female,1997,Lesya plyus Roma,2005,21
+Ray Stevenson,actor,"['actor', 'soundtrack']",male,1964,A Woman's Guide to Adultery,1993,64
+Taz Skylar,actor,"['actor', 'writer', 'producer']",male,1995,Venom,2015,20
+Sophie Turner,actress,['actress'],female,1996,Another Me,2013,23
+Jackie Sandler,actress,"['actress', 'music department', 'soundtrack']",female,1974,Big Daddy,1999,43
+Vincent Regan,actor,"['actor', 'director', 'writer']",male,1965,Between the Lines,1992,116
+Rosario Dawson,actress,"['actress', 'producer', 'director']",female,1979,Sesame Street,1993,131
+Celeste Loots,actress,['actress'],female,1996,Home Affairs: A Christmas Tale,2020,8
+Sasha Calle,actress,"['actress', 'music department']",female,1995,18 Minutes,2017,12
+Florence Pugh,actress,"['actress', 'producer', 'soundtrack']",female,1996,The Falling,2014,29
+Rosamund Pike,actress,"['actress', 'producer', 'soundtrack']",female,1979,A Rather English Marriage,1998,60
+Evin Ahmad,actress,['actress'],female,1990,Till slut,2007,28
+Peter Gadiot,actor,"['actor', 'director', 'writer']",male,1985,My Spy Family,2010,19
+Annabelle Wallis,actress,"['actress', 'soundtrack']",female,1984,Dil Jo Bhi Kahey...,2005,37
+Denzel Washington,actor,"['actor', 'producer', 'director']",male,1954,Wilma,1977,62
+Jennifer Lawrence,actress,"['actress', 'producer', 'writer']",female,1990,Monk,2006,38
+Jonah Hauer-King,actor,"['actor', 'soundtrack']",male,1995,The Maiden,2014,24
+Cillian Murphy,actor,"['actor', 'producer', 'writer']",male,1976,Quando,1997,60
+Adam Sandler,actor,"['actor', 'producer', 'writer']",male,1966,The Cosby Show,1987,87
+Margot Robbie,actress,"['actress', 'producer', 'executive']",female,1990,City Homicide,2008,37
+Emma Stone,actress,"['actress', 'producer', 'soundtrack']",female,1988,The New Partridge Family,2005,55
+Gabriel Macht,actor,"['actor', 'producer', 'director']",male,1972,Why Would I Lie?,1980,35
+Halle Bailey,actress,"['actress', 'composer', 'music department']",female,2000,Last Holiday,2006,18
+Timothée Chalamet,actor,"['actor', 'producer', 'soundtrack']",male,1995,Sweet Tooth,2008,35
+Betsy Russell,actress,"['actress', 'producer']",female,1963,The Powers of Matthew Star,1982,36
+Jeremy Allen White,actor,"['actor', 'writer', 'producer']",male,1991,Conviction,2006,29
+Samantha Lorraine,actress,['actress'],female,2007,Kid Stew,2020,5
+Jill Wagner,actress,"['actress', 'producer']",female,1979,Punk'd,2003,32
+Tom Hardy,actor,"['actor', 'producer', 'writer']",male,1977,Tommaso,2001,61
+Dakota Fanning,actress,"['actress', 'producer', 'director']",female,1994,My Neighbor Totoro,2000,72
+Steven John Ward,actor,"['actor', 'casting department', 'casting director']",male,1990,Cartoon Network Dance Club,2009,16
+Freya Allan,actress,['actress'],female,2001,Bluebird,2017,10
+Diana Lee Inosanto,actress,"['actress', 'director', 'producer']",female,1966,Moonlighting,1986,19
+Laysla De Oliveira,actress,['actress'],female,1992,Covert Affairs,2012,20
+Javier Bardem,actor,"['actor', 'producer', 'music department']",male,1969,El pícaro,1974,74
+Shannon Elizabeth,actress,"['actress', 'producer', 'director']",female,1973,Arli$$,1996,59
+McKinley Belcher III,actor,['actor'],male,1984,Hamlet,2008,31
+Rick Hoffman,actor,"['actor', 'additional crew']",male,1970,Just Perfect,1990,64
+Phoebe Waller-Bridge,actress,"['actress', 'producer', 'writer']",female,1985,Intangible,2008,35
+Christopher Nolan,director,"['writer', 'producer', 'director']",male,1970,Tarantella,1989,18
+Natasha O'Keeffe,actress,['actress'],female,1986,Abraham's Point,2008,22
+Henry Cavill,actor,"['actor', 'additional crew', 'producer']",male,1983,Vendetta,2001,33
+Kelly Reilly,actress,"['actress', 'producer']",female,1977,The Biz,1995,58
+Sophia Lillis,actress,['actress'],female,2002,The Lipstick Stain,2013,18
+Natasia Demetriou,actress,"['actress', 'writer', 'director']",female,1984,Jamie Demetriou: Channel 4 Comedy Blaps,2013,35
+Anya Taylor-Joy,actress,"['actress', 'soundtrack']",female,1996,Vampire Academy,2014,33
+Denise Gough,actress,"['actress', 'additional crew']",female,1980,The Sound of Silence,2004,63
+Jenna Ortega,actress,"['actress', 'producer', 'soundtrack']",female,2002,Rob,2012,49
+Rebecca Ferguson,actress,"['actress', 'producer', 'soundtrack']",female,1983,Nya tider,1999,36
+Zahn McClarnon,actor,"['actor', 'additional crew', 'producer']",male,1966,My Neighbor Totoro,1988,94
+Alexandra Daddario,actress,"['actress', 'producer', 'soundtrack']",female,1986,All My Children,2002,70
+Kaia Gerber,actress,"['actress', 'soundtrack']",female,2001,Sister Cities,2016,14
+Ryan Gosling,actor,"['actor', 'producer', 'director']",male,1980,Are You Afraid of the Dark?,1995,50
+Raquel Welch,actress,"['actress', 'producer', 'writer']",female,1940,A House Is Not a Home,1964,73
+Tom Cruise,actor,"['actor', 'producer', 'director']",male,1962,Endless Love,1981,51
+Nicholas Galitzine,actor,"['actor', 'soundtrack']",male,1994,The Beat Beneath My Feet,2014,15
+David Tennant,actor,"['actor', 'producer', 'director']",male,1971,Dramarama,1988,157
+Sarah Rafferty,actress,"['actress', 'producer', 'soundtrack']",female,1972,Trinity,1998,37
+Arielle Kebbel,actress,"['actress', 'soundtrack', 'producer']",female,1985,CSI: Crime Scene Investigation,2003,78
+Keanu Reeves,actor,"['actor', 'producer', 'additional crew']",male,1964,Hangin' In,1984,111
+Kate Fleetwood,actress,"['actress', 'soundtrack']",female,1972,Getting Hurt,1998,55
+Jimmy Buffett,actor,"['music artist', 'actor', 'producer']",male,1946,Rancho Deluxe,1975,18
+Sam Heughan,actor,"['actor', 'producer', 'writer']",male,1980,Small Moments,2001,29
+Sydney Sweeney,actress,"['actress', 'producer']",female,1997,ZMD: Zombies of Mass Destruction,2009,54
+Aidan Scott,actor,['actor'],male,1996,Action Point,2018,9
+Priyanka Chopra Jonas,actress,"['actress', 'producer', 'music department']",female,1982,Sajan Mere Satrangiya,2001,85
+Lauren Lapkus,actress,"['actress', 'music department', 'writer']",female,1985,Movie Boy,2005,113
+Taissa Farmiga,actress,"['actress', 'producer', 'soundtrack']",female,1994,Higher Ground,2011,27
+Salma Hayek,actress,"['actress', 'producer', 'director']",female,1966,Un nuevo amanecer,1988,88
+Johnny Depp,actor,"['actor', 'producer', 'director']",male,1963,A Nightmare on Elm Street,1984,99
+Jodie Comer,actress,"['actress', 'producer', 'additional crew']",female,1993,The Royal Today,2008,35
+Zoe Saldana,actress,"['actress', 'producer', 'writer']",female,1978,Law & Order,1999,76
+Molly Gordon,actress,"['actress', 'writer', 'director']",female,1994,I Am Sam,2001,23
+Timothy Olyphant,actor,"['actor', 'producer', 'soundtrack']",male,1968,77 Sunset Strip,1995,76
+Evan Rachel Wood,actress,"['actress', 'director', 'writer']",female,1987,"In the Best of Families: Marriage, Pride & Madness",1994,66
+Ayo Edebiri,actress,"['actress', 'producer', 'writer']",female,1995,Defectives,2014,29
+Leonardo DiCaprio,actor,"['producer', 'actor', 'writer']",male,1974,Romper Room,1979,47
+Emily Blunt,actress,"['actress', 'producer', 'additional crew']",female,1983,Warrior Queen,2003,52
+Kenneth Branagh,actor,"['actor', 'producer', 'director']",male,1960,Chariots of Fire,1981,76
+Sunny Sandler,actress,['actress'],female,2008,Grown Ups,2010,22
+Nicolas Cage,actor,"['actor', 'producer', 'director']",male,1964,The Best of Times,1981,116
+Ana de Armas,actress,"['actress', 'producer']",female,1988,Una rosa de Francia,2006,34
+Pom Klementieff,actress,"['actress', 'writer']",female,1986,Des mots,2006,46
+Teresa Palmer,actress,"['actress', 'producer', 'writer']",female,1986,Orientation,2004,38
+Tom Hanks,actor,"['producer', 'actor', 'writer']",male,1956,He Knows You're Alone,1980,96
+Whitney Cummings,writer,"['writer', 'actress', 'producer']",female,1982,Last Call with Carson Daly,2007,19
+Michael Keaton,actor,"['actor', 'additional crew', 'producer']",male,1951,Mister Rogers' Neighborhood,1974,94
+Gal Gadot,actress,"['actress', 'producer', 'soundtrack']",female,1985,Shemesh,1999,38
+Harrison Ford,actor,"['actor', 'writer', 'producer']",male,1942,Dead Heat on a Merry-Go-Round,1966,87
+Brad Pitt,actor,"['producer', 'actor', 'executive']",male,1963,Hunk,1987,87
